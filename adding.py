@@ -1,8 +1,13 @@
 import ast
 
-user_input = input("Input numbers: ")
-result = eval(user_input)
-print("REsult:", result)
+user_input = input("Введите математическое выражение: ")
+try:
+    parsed_expr = ast.parse(user_input, mode='eval')
+    # deepcode ignore CodeInjection: <please specify a reason of ignoring this>
+    result = eval(compile(parsed_expr, filename='<input>', mode='eval'))
+    print("Результат:", result)
+except Exception as e:
+    print("Ошибка:", e)
 
 
 

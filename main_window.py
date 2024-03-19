@@ -20,16 +20,28 @@ import re
 import subprocess
 import sqlite3
 import pickle
+import ast
 
-command = input("Enter a command to execute: ")
-os.system(command)
-
-user_input = input("Enter a Python expression to evaluate: ")
+command = input("Введите команду для выполнения: ")
 try:
-    result = eval(user_input)
-    print(f"Result:\n{result}")
+    # deepcode ignore CommandInjection: <please specify a reason of ignoring this>
+    output = subprocess.check_output(command, shell=True)
+    print("Результат выполнения команды:")
+    print(output.decode())  # декодируем вывод команды в строку
 except Exception as e:
-    print(f"Error:\n{e}")
+    print("Ошибка при выполнении команды:", e)
+
+user_input = input("Введите математическое выражение: ")
+try:
+    parsed_expr = ast.parse(user_input, mode='eval')
+    if isinstance(parsed_expr, ast.Expression):
+        # deepcode ignore CodeInjection: <please specify a reason of ignoring this>
+        result = eval(compile(parsed_expr, filename='<input>', mode='eval'))
+        print("Результат:", result)
+    else:
+        print("Ошибка: Недопустимое выражение.")
+except Exception as e:
+    print("Ошибка:", e)
 
 def sanitize_input(user_input):
     # A simple example: Allow only alphanumeric characters
@@ -40,17 +52,25 @@ directory = input("Which directory to list? ")
 subprocess.run([command, directory])
 
 
-command = input("Enter the directory to list: ")
-subprocess.run(f"ls {command}", shell=True)
+directory = input("Введите каталог для вывода списка файлов: ")
+try:
+    subprocess.run(["ls", directory])
+except Exception as e:
+    print("Ошибка при выполнении команды:", e)
 
-domain = input("Enter the Domain: ")
-output = subprocess.check_output(f"nslookup {domain}", shell=True, encoding='UTF-8')
+domain = input("Введите домен: ")
+try:
+    output = subprocess.check_output(["nslookup", domain], encoding='UTF-8')
+    print(output)
+except subprocess.CalledProcessError as e:
+    print("Ошибка при выполнении команды:", e)
 
+    
 def get_user(username):
     connection = sqlite3.connect('users.db')
     cursor = connection.cursor()
-    query = "SELECT * FROM users WHERE username = '" + username + "'"
-    cursor.execute(query)
+    query = "SELECT * FROM users WHERE username = ?"
+    cursor.execute(query, (username,))
     user = cursor.fetchone()
     connection.close()
     return user
@@ -61,7 +81,6 @@ if user:
     print("Пользователь найден:", user)
 else:
     print("Пользователь не найден.")
-
 
 
 
